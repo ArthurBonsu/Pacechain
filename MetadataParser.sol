@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 
 /**
  * @title MetadataParser
- * @dev Handles parsing and preparation of cross-chain transaction metadata
+ * @dev Enhanced version with actual encryption and detailed protocol conversion
  */
-contract MetadataParser is ReentrancyGuard {
+contract MetadataParser is ReentrancyGuard, ChaCha20Poly1305, ProtocolConverter {
     using Counters for Counters.Counter;
     
     struct ProtocolInstruction {
@@ -158,10 +158,28 @@ contract MetadataParser is ReentrancyGuard {
      * @dev Encrypt payload using ChaCha20-Poly1305 (mock implementation)
      * In production, this would interface with an external encryption service
      */
-    function encryptPayload(bytes calldata _payload) private pure returns (bytes memory, bytes memory) {
-        // Mock implementation - in production, implement actual ChaCha20-Poly1305 encryption
-        bytes memory encryptedPayload = _payload; // Placeholder
-        bytes memory authTag = abi.encodePacked(keccak256(_payload)); // Placeholder
-        return (encryptedPayload, authTag);
+    function encryptPayload(
+        bytes calldata _payload,
+        bytes32 _key,
+        bytes12 _nonce
+    ) public pure returns (bytes memory encryptedPayload, bytes memory authTag) {
+        // Initialize ChaCha20 state
+        ChaChaState memory state = initializeState(_key, _nonce, 1);
+
+        // Generate keystream
+        bytes memory keystream = chacha20Block(state);
+
+        // Encrypt payload
+        encryptedPayload = new bytes(_payload.length);
+        for (uint i = 0; i < _payload.length; i++) {
+            encryptedPayload[i] = _payload[i] ^ keystream[i];
+        }
+
+        // Generate Poly1305 MAC
+        authTag = poly1305Mac(encryptedPayload, _key);
+
+        return (encryptedPayload, abi.encodePacked(authTag));
     }
+
+
 }
