@@ -44,10 +44,10 @@ library TransactionTypes {
 }
 
 /**
- * @title PasschainChannel
+ * @title PacechainChannel
  * @dev Manages transmission channels between blockchains
  */
-contract PasschainChannel is ReentrancyGuard, Pausable, AccessControl {
+contract PacechainChannel is ReentrancyGuard, Pausable, AccessControl {
     using TransactionTypes for TransactionTypes.Channel;
     
     bytes32 public constant CHANNEL_OPERATOR = keccak256("CHANNEL_OPERATOR");
